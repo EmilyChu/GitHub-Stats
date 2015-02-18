@@ -1,20 +1,23 @@
 require 'httparty'
 require 'pry'
 
-# $ export GITHUB_TOKEN=...
-TOKEN = ENV['GITHUB_TOKEN'] || prompt_for_token
-
-CLASS_NAME = "TIY-DC-ROR-2015-Jan"
-
 def prompt_for_token
   print "Enter your github token: "
   gets.chomp
 end
 
+# $ export GITHUB_TOKEN=...
+TOKEN = ENV['GITHUB_TOKEN'] || prompt_for_token
+
+CLASS_NAME = "TIY-DC-ROR-2015-Jan"
+
+class GitHub
+  include HTTParty
+  base_uri "https://api.github.com"
 
 # GET /repos/:owner/:repo/stats/contributors
-def contributors
-  contributors = HTTParty.get("https://api.github.com/repos/TIY-DC-ROR-2015-Jan/merge-conflict/contributors")
+def contributors (org, repo)
+  contributors = GitHub.get("/repos/#{org}/#{repo}/contributors")
   contributors.each do |c|
     names = c["login"]
     puts names
@@ -22,8 +25,8 @@ def contributors
 end
 
 # GET /repos/:owner/:repo/stats/contributors
-def contributors_stats
-  users = HTTParty.get("https://api.github.com/repos/TIY-DC-ROR-2015-Jan/merge-conflict/stats/contributors")
+def contributors_stats (org, repo)
+  users = GitHub.get("/repos/#{org}/#{repo}/stats/contributors")
   additions = 0
   deletions = 0
   commits = 0
@@ -37,4 +40,11 @@ def contributors_stats
   end
   print "Total Number of Additions: #{additions}\t Total Number of Deletions: #{deletions}\tTotal Number of Commits: #{commits}"
 end
-contributors_stats
+end
+
+api = GitHub.new
+
+api.contributors_stats(CLASS_NAME, 'merge-conflict')
+
+
+
