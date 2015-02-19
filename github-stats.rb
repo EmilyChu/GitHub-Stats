@@ -75,19 +75,17 @@ def statistics
     rescue
     end
     end
-    puts "#{user} additions: #{additions}, deletions: #{deletions}, commits: #{commits}"
+    print "User: #{user}".ljust(20) + "Additions: #{additions}".ljust(20) + "Deletions: #{deletions}".ljust(20) + "Commits: #{commits}".ljust(20)
+    puts
   end
 end
 end
 
-# def display_table
-    
-#     print "User".ljust(20) + 'Additions'.ljust(20) + 'Deletions'.ljust(20) + 'Commits'.ljust(20)
-#     puts
-#     _____.each do |user|
-#       user.display_stats
-#     end
-# end
+
+statistics = GitHub.new(token)
+statistics.members(org_name)
+statistics.members_repos
+statistics.statistics
 
 # GET /repos/:owner/:repo/stats/contributors
 # def contributors_stats (org, repo)
@@ -106,11 +104,3 @@ end
 #   print "Total Number of Additions: #{additions}\t Total Number of Deletions: #{deletions}\tTotal Number of Commits: #{commits}"
 # end
 # end
-
-statistics = GitHub.new(token)
-statistics.members(org_name)
-statistics.members_repos
-statistics.statistics
-
-
-
