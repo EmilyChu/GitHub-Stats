@@ -3,48 +3,114 @@ require 'pry'
 
 def prompt_for_token
   print "Enter your github token: "
-  gets.chomp
+  token = gets.chomp
 end
 
-# $ export GITHUB_TOKEN=...
-TOKEN = ENV['GITHUB_TOKEN'] || prompt_for_token
+def prompt_for_org_name
+  print "Enter the organization you're interested in: "
+  org_name = gets.chomp
+end
 
-CLASS_NAME = "TIY-DC-ROR-2015-Jan"
+# # $ export GITHUB_TOKEN=...
+# TOKEN = ENV['GITHUB_TOKEN'] || 
+token = prompt_for_token
+
+org_name = prompt_for_org_name
+# CLASS_NAME = "TIY-DC-ROR-2015-Jan"
 
 class GitHub
   include HTTParty
   base_uri "https://api.github.com"
 
-# GET /repos/:owner/:repo/stats/contributors
-def contributors (org, repo)
-  contributors = GitHub.get("/repos/#{org}/#{repo}/contributors")
-  contributors.each do |c|
-    names = c["login"]
-    puts names
-  end
+def initialize (token)
+  @auth = token
+  @users = []
+  @headers = {"Authorization" => "token #{@auth}", "User-Agent" => "EmilyChu"}
+  @repo_homes = []
 end
 
-# GET /repos/:owner/:repo/stats/contributors
-def contributors_stats (org, repo)
-  users = GitHub.get("/repos/#{org}/#{repo}/stats/contributors")
-  additions = 0
-  deletions = 0
-  commits = 0
-  users.each do |u|           # goes through each user's hash
-    stats = u["weeks"]        # gives me array of hashes containing add, delete, commit stats
-    stats.each do |h|         # goes through each hash element
-      additions += h["a"]      # finds value at each key
-      deletions += h["d"]
-      commits += h["c"]
+# GET /orgs/:org/members
+def members (org)
+  members = GitHub.get("/orgs/#{org}/members", 
+    :headers => @headers)
+  members.each do |m|
+    names = m["login"]
+    @users<<names
+  end
+  return @users
+end
+
+# List public repositories for the specified user
+# GET /users/:username/repos
+def members_repos
+  @users.each do |user_name|
+    repos = GitHub.get("/users/#{user_name}/repos", 
+      :headers => @headers)
+    repos.each do |r|
+      repo_name = r["url"]
+      @repo_homes<<repo_name
     end
   end
-  print "Total Number of Additions: #{additions}\t Total Number of Deletions: #{deletions}\tTotal Number of Commits: #{commits}"
+  return @repo_homes
+end
+
+# GET /repos/:owner/:repo/stats/contributors
+def statistics
+  @users.each do |user|
+    additions = 0
+    deletions = 0
+    commits = 0
+    @repo_homes.each do |x|
+      begin
+      list_of_repos = GitHub.get("#{x}/stats/contributors", :headers => @headers)
+      list_of_repos.each do |w|
+        if w["author"]["login"] == user
+          w["weeks"].each do |h|
+            additions += h["a"]
+            deletions += h["d"]
+            commits += h["c"]
+          end
+        end
+      end
+    rescue
+    end
+    end
+    puts "#{user} additions: #{additions}, deletions: #{deletions}, commits: #{commits}"
+  end
 end
 end
 
-api = GitHub.new
+# def display_table
+    
+#     print "User".ljust(20) + 'Additions'.ljust(20) + 'Deletions'.ljust(20) + 'Commits'.ljust(20)
+#     puts
+#     _____.each do |user|
+#       user.display_stats
+#     end
+# end
 
-api.contributors_stats(CLASS_NAME, 'merge-conflict')
+# GET /repos/:owner/:repo/stats/contributors
+# def contributors_stats (org, repo)
+#   users = GitHub.get("/repos/#{org}/#{repo}/stats/contributors")
+#   additions = 0
+#   deletions = 0
+#   commits = 0
+#   users.each do |u|           # goes through each user's hash
+#     stats = u["weeks"]        # gives me array of hashes containing add, delete, commit stats
+#     stats.each do |h|         # goes through each hash element
+#       additions += h["a"]     # finds value at each key
+#       deletions += h["d"]
+#       commits += h["c"]
+#     end
+#   end
+#   print "Total Number of Additions: #{additions}\t Total Number of Deletions: #{deletions}\tTotal Number of Commits: #{commits}"
+# end
+# end
+
+statistics = GitHub.new(token)
+statistics.members(org_name)
+statistics.members_repos
+statistics.statistics
 
 
 
